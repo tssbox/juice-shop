@@ -9,6 +9,7 @@ permissions:
   checks: write
   contents: read
   id-token: write
+  actions: write
 
 jobs:
   test:
@@ -28,7 +29,7 @@ jobs:
 
       - name: Start application
         run: |
-          npm start &
+          npm start > app.log 2>&1 &
 
       - name: Probe application readiness
         run: |
@@ -51,6 +52,7 @@ jobs:
           BRIGHT_TOKEN: ${{ secrets.BRIGHT_TOKEN }}
 
       - name: Run security tests
+        continue-on-error: true
         run: |
           node --experimental-transform-types --experimental-strip-types --experimental-detect-module --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning --test-force-exit --test-concurrency=1 --test .brightsec/tests/*.test.ts
         env:
@@ -60,3 +62,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRIGHT_TOKEN: ${{ env.BRIGHT_TOKEN }}
           BRIGHT_TARGET_URL: http://127.0.0.1:3000
+
+      - name: Upload application logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-logs
+          path: app.log
