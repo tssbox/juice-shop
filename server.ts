@@ -31,6 +31,7 @@ import securityTxt from 'express-security.txt'
 import { rateLimit } from 'express-rate-limit'
 import { getStream } from 'file-stream-rotator'
 import type { Request, Response, NextFunction } from 'express'
+import { AsyncLocalStorage } from 'node:async_hooks'
 
 import { sequelize } from './models'
 import { UserModel } from './models/user'
@@ -173,6 +174,25 @@ restoreOverwrittenFilesWithOriginals().then(() => {
   app.locals.captchaBypassReqTimes = []
   app.locals.abused_ssti_bug = false
   app.locals.abused_ssrf_bug = false
+
+  /* Unhandled rejections handling with AsyncLocalStorage */
+  const als = new AsyncLocalStorage()
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    als.run({ res }, () => { next() })
+  })
+  const onFatal = (reason: any) => {
+    console.error('[unhandledRejection]', reason)
+
+    const store = als.getStore() as { res?: Response } | undefined
+    const res = store?.res
+
+    if (res && !res.headersSent && !res.writableEnded) {
+      res.status(500).json({ error: 'Internal server error' })
+    }
+  }
+
+  process.on('uncaughtException', onFatal)
+  process.on('unhandledRejection', onFatal)
 
   /* Compression for all requests */
   app.use(compression())
