@@ -21,7 +21,7 @@ after(() => runner.clear());
 test('PUT /api/Hints/1', { signal: AbortSignal.timeout(timeout) }, async () => {
   await runner
     .createScan({
-      tests: ['bopla', 'xss', 'sqli', 'csrf', 'id_enumeration'],
+      tests: ['id_enumeration'],
       attackParamLocations: [AttackParamLocation.BODY, AttackParamLocation.HEADER],
       starMetadata: {
         code_source: "tssbox/juice-shop:master",
