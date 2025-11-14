@@ -32,6 +32,7 @@ import { rateLimit } from 'express-rate-limit'
 import { getStream } from 'file-stream-rotator'
 import type { Request, Response, NextFunction } from 'express'
 import { AsyncLocalStorage } from 'node:async_hooks'
+import { PerformanceObserver } from 'node:perf_hooks'
 
 import { sequelize } from './models'
 import { UserModel } from './models/user'
@@ -174,6 +175,24 @@ restoreOverwrittenFilesWithOriginals().then(() => {
   app.locals.captchaBypassReqTimes = []
   app.locals.abused_ssti_bug = false
   app.locals.abused_ssrf_bug = false
+
+  const BYTES_IN_MB = 1024 * 1024
+  let requestCount = 0
+  const obs = new PerformanceObserver((list) => {
+    const entry = list.getEntries()[0]
+    // @ts-expect-error FIXME kind is not a property of PerformanceEntry
+    const { duration, kind } = entry
+    const heapUsed = process.memoryUsage().heapUsed / BYTES_IN_MB
+    logger.info(`GC: kind=${kind} duration=${duration.toFixed(2)}ms heapUsed=${heapUsed.toFixed(2)}MB`)
+  })
+  obs.observe({ entryTypes: ['gc'], buffered: false })
+
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    requestCount++
+    const { rss, heapUsed, heapTotal, external } = process.memoryUsage()
+    logger.info(`Request #${requestCount} | RSS: ${(rss / BYTES_IN_MB).toFixed(2)}MB, HeapUsed: ${(heapUsed / BYTES_IN_MB).toFixed(2)}MB, HeapTotal: ${(heapTotal / BYTES_IN_MB).toFixed(2)}MB, External: ${(external / BYTES_IN_MB).toFixed(2)}MB, Path: ${req.path}`)
+    next()
+  })
 
   /* Unhandled rejections handling with AsyncLocalStorage */
   const als = new AsyncLocalStorage()

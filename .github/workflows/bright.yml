@@ -1,0 +1,71 @@
+name: Bright
+
+on:
+  pull_request:
+    branches:
+      - '**'
+
+permissions:
+  checks: write
+  contents: read
+  id-token: write
+  actions: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Install application dependencies
+        run: |
+          npm install
+
+      - name: Start application
+        run: |
+          npm start > app.log 2>&1 &
+
+      - name: Probe application readiness
+        run: |
+          for i in {1..30}; do nc -z 127.0.0.1 3000 && exit 0 || sleep 5; done; exit 1
+
+      - name: Use Node.js 22.x for SecTesterJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+
+      - name: Install SecTesterJS dependencies
+        run: |
+          npm i --save=false --prefix .brightsec @sectester/core @sectester/repeater @sectester/scan @sectester/runner @sectester/reporter
+
+      - name: Authenticate with Bright
+        uses: ./.github/workflows/composite/configure-bright-credentials
+        with:
+          BRIGHT_HOSTNAME: development.playground.brightsec.com
+          BRIGHT_PROJECT_ID: xagvSFR3EMYf1Yhma8dxEJ
+          BRIGHT_TOKEN: ${{ secrets.BRIGHT_TOKEN }}
+
+      - name: Run security tests
+        continue-on-error: true
+        run: |
+          node --experimental-transform-types --experimental-strip-types --experimental-detect-module --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning --test-force-exit --test-concurrency=1 --test .brightsec/tests/*.test.ts
+        env:
+          BRIGHT_HOSTNAME: development.playground.brightsec.com
+          BRIGHT_PROJECT_ID: xagvSFR3EMYf1Yhma8dxEJ
+          BRIGHT_AUTH_ID: wEfwSeetcm3JFpHqQAS5Sp
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRIGHT_TOKEN: ${{ env.BRIGHT_TOKEN }}
+          BRIGHT_TARGET_URL: http://127.0.0.1:3000
+
+      - name: Upload application logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-logs
+          path: app.log
