@@ -18,16 +18,16 @@ before(async () => {
 
 after(() => runner.clear());
 
-test('GET /rest/products/1/reviews', { signal: AbortSignal.timeout(timeout) }, async () => {
+test('GET /redirect?to=:url (v2)', { signal: AbortSignal.timeout(timeout) }, async () => {
   await runner
     .createScan({
-      tests: ['nosql', 'business_constraint_bypass', 'xss'],
-      attackParamLocations: [AttackParamLocation.PATH],
+      tests: ['unvalidated_redirect', 'xss', 'ssrf'],
+      attackParamLocations: [AttackParamLocation.QUERY],
       starMetadata: {
-        code_source: "tssbox/juice-shop:master",
-        databases: ["SQLite"],
+        code_source: 'tssbox/juice-shop:master',
+        databases: ['SQLite'],
         user_roles: {
-          roles: ["customer", "deluxe", "accounting", "admin"]
+          roles: ['customer', 'deluxe', 'accounting', 'admin']
         }
       }
     })
@@ -35,6 +35,6 @@ test('GET /rest/products/1/reviews', { signal: AbortSignal.timeout(timeout) }, a
     .timeout(timeout)
     .run({
       method: HttpMethod.GET,
-      url: `${baseUrl}/rest/products/1/reviews`
+      url: `${baseUrl}/redirect?to=https://example.com`
     });
 });

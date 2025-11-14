@@ -18,11 +18,11 @@ before(async () => {
 
 after(() => runner.clear());
 
-test('GET /rest/order-history', { signal: AbortSignal.timeout(timeout) }, async () => {
+test('GET /redirect?to=:url (v3)', { signal: AbortSignal.timeout(timeout) }, async () => {
   await runner
     .createScan({
-      tests: ['bopla', 'nosql', 'xss', 'jwt'],
-      attackParamLocations: [AttackParamLocation.HEADER],
+      tests: ['unvalidated_redirect', 'xss', 'ssrf'],
+      attackParamLocations: [AttackParamLocation.QUERY],
       starMetadata: {
         code_source: 'tssbox/juice-shop:master',
         databases: ['SQLite'],
@@ -35,7 +35,6 @@ test('GET /rest/order-history', { signal: AbortSignal.timeout(timeout) }, async 
     .timeout(timeout)
     .run({
       method: HttpMethod.GET,
-      url: `${baseUrl}/rest/order-history`,
-      headers: { Authorization: 'Bearer <token>' }
+      url: `${baseUrl}/redirect?to=https://example.com`
     });
 });

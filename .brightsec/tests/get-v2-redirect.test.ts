@@ -18,11 +18,11 @@ before(async () => {
 
 after(() => runner.clear());
 
-test('GET /rest/captcha', { signal: AbortSignal.timeout(timeout) }, async () => {
+test('GET /redirect (v2)', { signal: AbortSignal.timeout(timeout) }, async () => {
   await runner
     .createScan({
-      tests: ['osi', 'csrf', 'xss', 'id_enumeration'],
-      attackParamLocations: [AttackParamLocation.PATH],
+      tests: ['unvalidated_redirect', 'xss', 'ssrf'],
+      attackParamLocations: [AttackParamLocation.QUERY],
       starMetadata: {
         code_source: 'tssbox/juice-shop:master',
         databases: ['SQLite'],
@@ -35,6 +35,6 @@ test('GET /rest/captcha', { signal: AbortSignal.timeout(timeout) }, async () => 
     .timeout(timeout)
     .run({
       method: HttpMethod.GET,
-      url: `${baseUrl}/rest/captcha`
+      url: `${baseUrl}/redirect?to=https://example.com`
     });
 });

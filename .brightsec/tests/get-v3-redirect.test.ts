@@ -18,11 +18,11 @@ before(async () => {
 
 after(() => runner.clear());
 
-test('GET /rest/country-mapping', { signal: AbortSignal.timeout(timeout) }, async () => {
+test('GET /redirect (v3)', { signal: AbortSignal.timeout(timeout) }, async () => {
   await runner
     .createScan({
-      tests: ['improper_asset_management', 'full_path_disclosure', 'xss'],
-      attackParamLocations: [AttackParamLocation.PATH, AttackParamLocation.QUERY],
+      tests: ['unvalidated_redirect', 'xss', 'ssrf'],
+      attackParamLocations: [AttackParamLocation.QUERY],
       starMetadata: {
         code_source: 'tssbox/juice-shop:master',
         databases: ['SQLite'],
@@ -35,6 +35,6 @@ test('GET /rest/country-mapping', { signal: AbortSignal.timeout(timeout) }, asyn
     .timeout(timeout)
     .run({
       method: HttpMethod.GET,
-      url: `${baseUrl}/rest/country-mapping`
+      url: `${baseUrl}/redirect?to=https://example.com`
     });
 });
