@@ -31,16 +31,16 @@ export function getDeliveryMethods () {
 
 export function getDeliveryMethod () {
   return async (req: Request, res: Response, next: NextFunction) => {
-    const userId = req.user?.id; // Assuming req.user is populated with authenticated user info
+    const userId = req.user?.id // Assuming req.user is populated with authenticated user info
     if (!userId) {
-      return res.status(401).json({ status: 'error', message: 'Unauthorized' });
+      return res.status(401).json({ status: 'error', message: 'Unauthorized' })
     }
 
     const method = await DeliveryModel.findOne({ where: { id: req.params.id } })
     if (method != null) {
       // Add authorization check here
       if (!await isUserAuthorizedForDeliveryMethod(userId, method.id)) {
-        return res.status(403).json({ status: 'error', message: 'Forbidden' });
+        return res.status(403).json({ status: 'error', message: 'Forbidden' })
       }
 
       const sendMethod = {
@@ -57,8 +57,8 @@ export function getDeliveryMethod () {
   }
 }
 
-async function isUserAuthorizedForDeliveryMethod(userId: number, deliveryMethodId: number): Promise<boolean> {
+async function isUserAuthorizedForDeliveryMethod (userId: number, deliveryMethodId: number): Promise<boolean> {
   // Implement your authorization logic here
   // For example, check if the user has access to the delivery method
-  return true; // Placeholder implementation
+  return true // Placeholder implementation
 }
