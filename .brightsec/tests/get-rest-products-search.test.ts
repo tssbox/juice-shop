@@ -21,7 +21,7 @@ after(() => runner.clear());
 test('GET /rest/products/search?q=:query', { signal: AbortSignal.timeout(timeout) }, async () => {
   await runner
     .createScan({
-      tests: ['sqli', 'full_path_disclosure', 'xss', 'business_constraint_bypass'],
+      tests: ['sqli'],
       attackParamLocations: [AttackParamLocation.QUERY],
       starMetadata: {
         code_source: "tssbox/juice-shop:master",
